@@ -2,10 +2,14 @@ package pkgui
 
 import (
 	"fmt"
+	"process-order/global"
+	"process-order/service"
 	"strconv"
+	"strings"
 
 	"github.com/ying32/govcl/vcl"
 	"github.com/ying32/govcl/vcl/types"
+	"github.com/ying32/govcl/vcl/win"
 )
 
 //::private::
@@ -31,11 +35,11 @@ var tempData []TTempItem
 var ListColumnsList = []ListColumns{
 	{Caption: "序号", Width: 50},
 	{Caption: "图号", Width: 150},
-	{Caption: "零件号", Width: 180},
-	{Caption: "客户零件号", Width: 180},
+	{Caption: "零件号", Width: 170},
+	{Caption: "客户零件号", Width: 170},
 	{Caption: "客户", Width: 150},
-	{Caption: "订单日期", Width: 150},
-	{Caption: "状态", Width: 80},
+	{Caption: "订单日期", Width: 100},
+	{Caption: "状态", Width: 150},
 }
 
 func (f *TForm1) OnFormCreate(sender vcl.IObject) {
@@ -56,14 +60,20 @@ func (f *TForm1) OnFormCreate(sender vcl.IObject) {
 	item := vcl.NewMenuItem(f)
 	item.SetCaption("复制图号")
 	item.SetOnClick(func(vcl.IObject) {
-		fmt.Println(f.ListView1.ItemIndex())
-		// f.Close()
+		// 复制图号到粘贴板
+		text := f.ListView1.Selected().SubItems().CommaText()
+		textSplit := strings.Split(text, ",")
+		vcl.Clipboard.SetTextBuf(textSplit[0])
+		fmt.Println(textSplit[0])
 	})
 	item2 := vcl.NewMenuItem(f)
 	item2.SetCaption("复制零件号")
-	item.SetOnClick(func(vcl.IObject) {
-		fmt.Println(f.ListView1.ItemIndex())
-		// f.Close()
+	item2.SetOnClick(func(vcl.IObject) {
+		// 复制零件号到粘贴板
+		text := f.ListView1.Selected().SubItems().CommaText()
+		textSplit := strings.Split(text, ",")
+		vcl.Clipboard.SetTextBuf(textSplit[1])
+		fmt.Println(textSplit[1])
 	})
 	pm.Items().Add(item)
 	pm.Items().Add(item2)
@@ -76,34 +86,28 @@ func (f *TForm1) OnFormCreate(sender vcl.IObject) {
 		col.SetWidth(v.Width)
 	}
 	f.ListView1.Items().BeginUpdate()
-	for i := 1; i <= 100; i++ {
+	for i, v := range global.OrderList {
 		item := f.ListView1.Items().Add()
 		item.SetCaption(strconv.Itoa(i + 1))
-		item.SubItems().Add("CP492SG-A")
-		item.SubItems().Add("YV2000-1003103SF1")
-		item.SubItems().Add("YV2000-1003103SF1")
-		item.SubItems().Add("安徽全柴动力")
-		item.SubItems().Add("2022-07-16 21:41")
-		item.SubItems().Add(strconv.Itoa(int(i)))
+		item.SubItems().Add(v.DrawNo)
+		item.SubItems().Add(v.PartNo)
+		item.SubItems().Add(v.CustomerPartNo)
+		item.SubItems().Add(v.Customer)
+		item.SubItems().Add(v.OrderDate.Format("2006-01-02"))
+		item.SubItems().Add(v.Status)
 	}
 	f.ListView1.Items().EndUpdate()
-	// 产生100w条数据
-	// tempData = make([]TTempItem, 100)
-	// for i := 0; i < len(tempData); i++ {
-	// 	tempData[i].Sub1 = fmt.Sprintf("%d", i+1)
-	// 	tempData[i].Sub2 = "CP492SG-A"
-	// 	tempData[i].Sub3 = "YV2000-1003103SF1"
-	// 	tempData[i].Sub4 = "YV2000-1003103SF1"
-	// 	tempData[i].Sub5 = "安徽全柴动力"
-	// 	tempData[i].Sub6 = "2022-07-16 21:41"
-	// 	tempData[i].Sub7 = strconv.Itoa(int(i))
-	// }
+
 	f.ListView1.Items().SetCount(int32(len(tempData))) //   必须主动的设置Virtual List的行数
 
 }
 
 func (f *TForm1) OnMenuItem1Click(sender vcl.IObject) {
+	win.MessageBox(0, "软件版本：V0.1\r\n软件开发：信息部\r\n作者：梁文杰", "工艺订单查询系统", win.MB_OK+win.MB_ICONINFORMATION)
+}
 
+func (f *TForm1) OnMenuItem2Click(sender vcl.IObject) {
+	f.Close()
 }
 
 func (f *TForm1) OnLabel1Click(sender vcl.IObject) {
@@ -111,17 +115,51 @@ func (f *TForm1) OnLabel1Click(sender vcl.IObject) {
 }
 
 func (f *TForm1) OnButton1Click(sender vcl.IObject) {
-
+	// 查询
+	f.ListView1.Items().BeginUpdate()
+	f.ListView1.Items().Clear()
+	index := 1
+	for _, v := range global.OrderList {
+		if strings.Index(v.DrawNo, strings.ToUpper(f.Edit1.Text())) != -1 {
+			item := f.ListView1.Items().Add()
+			item.SetCaption(strconv.Itoa(index))
+			item.SubItems().Add(v.DrawNo)
+			item.SubItems().Add(v.PartNo)
+			item.SubItems().Add(v.CustomerPartNo)
+			item.SubItems().Add(v.Customer)
+			item.SubItems().Add(v.OrderDate.Format("2006-01-02"))
+			item.SubItems().Add(v.Status)
+			index++
+		}
+	}
+	f.ListView1.Items().EndUpdate()
 }
 
+func (f *TForm1) OnButton2Click(sender vcl.IObject) {
+	// 获取数据
+	res, err := service.GetOrderList()
+	if err != nil {
+		fmt.Println(err)
+	}
+	global.OrderList = res
+	f.ListView1.Items().BeginUpdate()
+	f.ListView1.Items().Clear()
+	index := 1
+	for _, v := range global.OrderList {
+		item := f.ListView1.Items().Add()
+		item.SetCaption(strconv.Itoa(index))
+		item.SubItems().Add(v.DrawNo)
+		item.SubItems().Add(v.PartNo)
+		item.SubItems().Add(v.CustomerPartNo)
+		item.SubItems().Add(v.Customer)
+		item.SubItems().Add(v.OrderDate.Format("2006-01-02"))
+		item.SubItems().Add(v.Status)
+		index++
+	}
+	f.ListView1.Items().EndUpdate()
+}
 func (f *TForm1) OnTabControl1Change(sender vcl.IObject) {
 
-}
-
-// 弹窗菜单
-func (f *TForm1) OnListView1PopupMenu(sender vcl.IObject, popupmenu *vcl.TPopupMenu) {
-	// 右键菜单
-	// 右键菜单
 }
 
 func (f *TForm1) OnListView1Data(sender vcl.IObject, item *vcl.TListItem) {

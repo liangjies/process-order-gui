@@ -1,7 +1,12 @@
 package global
 
-import "gorm.io/gorm"
+import (
+	"process-order/model"
+
+	"gorm.io/gorm"
+)
 
 var (
-	SYS_DB *gorm.DB
+	SYS_DB    *gorm.DB
+	OrderList []model.OrderList
 )

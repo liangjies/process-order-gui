@@ -1,10 +1,14 @@
 package model
 
+import "time"
+
 type OrderList struct {
-	OrderID        string `gorm:"column:order_id"`
-	DrawNo         string `gorm:"column:drawNo"`
-	PartNo         string `gorm:"column:partNo"`
-	CustomerPartNo string `gorm:"column:customerPartNo"`
-	Customer       string `gorm:"column:customer"`
-	OrderDate      string `gorm:"column:orderDate"`
+	OrderID        int       `gorm:"column:ordeID"`
+	DrawNo         string    `gorm:"column:drawNo"`
+	PartNo         string    `gorm:"column:partNo"`
+	CustomerPartNo string    `gorm:"column:customerPartNo"`
+	Customer       string    `gorm:"column:customer"`
+	OrderDate      time.Time `gorm:"column:orderDate"`
+	OrderStatus    string    `gorm:"column:orderStatus"`
+	Status         string    `gorm:"column:status"`
 }

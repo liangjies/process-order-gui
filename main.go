@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/md5"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,10 +10,10 @@ import (
 	"os/exec"
 	"process-order/initialize"
 	"process-order/pkgui"
+	"process-order/service"
 	"time"
 
 	"process-order/global"
-	"process-order/service"
 
 	"github.com/ying32/govcl/vcl"
 	"github.com/ying32/govcl/vcl/types"
@@ -30,7 +29,6 @@ var (
 
 func init() {
 	global.SYS_DB = initialize.MSSQLGorm()
-	service.GetOrderList()
 }
 
 // go build -i -ldflags="-s -w -H windowsgui" -tags tempdll
@@ -59,7 +57,13 @@ func main() {
 			return
 		}
 	}
-
+	// 获取数据
+	res, err := service.GetOrderList()
+	if err != nil {
+		fmt.Println(err)
+	}
+	global.OrderList = res
+	// GUI
 	vcl.Application.SetScaled(true)
 	vcl.Application.SetTitle("project1")
 	vcl.Application.Initialize()
@@ -70,7 +74,7 @@ func main() {
 
 // 检测程序是否有更新
 func checkUpdate() bool {
-	updateURL := "http://" + Server + ":" + Port + "/technics/checkUpdate"
+	updateURL := "http://" + Server + ":" + Port + "/updates/process-order/md5.txt"
 	// 捕获异常
 	defer func() {
 		if err := recover(); err != nil {
@@ -86,16 +90,6 @@ func checkUpdate() bool {
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-
-	type Respond struct {
-		Code int    `json:"code"`
-		Md5  string `json:"md5"`
-	}
-	var respond Respond
-	err = json.Unmarshal(body, &respond)
-	if err != nil {
-		panic(err)
-	}
 	// 检测是否有新版本
 	f, err := os.Open(MainEXE)
 	if err != nil {
@@ -110,7 +104,7 @@ func checkUpdate() bool {
 		return false
 	}
 	FileMd5 := h.Sum(nil)
-	fmt.Println("FileMd5:", FileMd5)
-
-	return fmt.Sprintf("%x", FileMd5) != respond.Md5
+	fmt.Println(fmt.Sprintf("FileMd5:%x", FileMd5))
+	fmt.Println("body:", string(body))
+	return fmt.Sprintf("%x", FileMd5) != string(body)
 }
