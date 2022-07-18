@@ -103,7 +103,7 @@ func (f *TForm1) OnFormCreate(sender vcl.IObject) {
 }
 
 func (f *TForm1) OnMenuItem1Click(sender vcl.IObject) {
-	win.MessageBox(0, "软件版本：V0.1\r\n软件开发：信息部\r\n作者：梁文杰", "工艺订单查询系统", win.MB_OK+win.MB_ICONINFORMATION)
+	win.MessageBox(0, "软件版本：V1.2\r\n软件开发：信息部\r\n作者：梁文杰", "工艺订单查询系统", win.MB_OK+win.MB_ICONINFORMATION)
 }
 
 func (f *TForm1) OnMenuItem2Click(sender vcl.IObject) {
