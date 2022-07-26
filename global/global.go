@@ -7,6 +7,7 @@ import (
 )
 
 var (
-	SYS_DB    *gorm.DB
-	OrderList []model.OrderList
+	SYS_DB          *gorm.DB
+	OrderList       []model.OrderList
+	OrderStatusList []model.OrderList
 )

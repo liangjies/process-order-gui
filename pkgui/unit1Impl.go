@@ -64,7 +64,7 @@ func (f *TForm1) OnFormCreate(sender vcl.IObject) {
 		text := f.ListView1.Selected().SubItems().CommaText()
 		textSplit := strings.Split(text, ",")
 		vcl.Clipboard.SetTextBuf(textSplit[0])
-		fmt.Println(textSplit[0])
+		// fmt.Println(textSplit[0])
 	})
 	item2 := vcl.NewMenuItem(f)
 	item2.SetCaption("复制零件号")
@@ -73,7 +73,7 @@ func (f *TForm1) OnFormCreate(sender vcl.IObject) {
 		text := f.ListView1.Selected().SubItems().CommaText()
 		textSplit := strings.Split(text, ",")
 		vcl.Clipboard.SetTextBuf(textSplit[1])
-		fmt.Println(textSplit[1])
+		// fmt.Println(textSplit[1])
 	})
 	pm.Items().Add(item)
 	pm.Items().Add(item2)
@@ -103,7 +103,7 @@ func (f *TForm1) OnFormCreate(sender vcl.IObject) {
 }
 
 func (f *TForm1) OnMenuItem1Click(sender vcl.IObject) {
-	win.MessageBox(0, "软件版本：V1.2\r\n软件开发：信息部\r\n作者：梁文杰", "工艺订单查询系统", win.MB_OK+win.MB_ICONINFORMATION)
+	win.MessageBox(0, "软件版本：V1.3\r\n软件开发：信息部\r\n作者：梁文杰", "工艺订单查询系统", win.MB_OK+win.MB_ICONINFORMATION)
 }
 
 func (f *TForm1) OnMenuItem2Click(sender vcl.IObject) {
@@ -119,7 +119,11 @@ func (f *TForm1) OnButton1Click(sender vcl.IObject) {
 	f.ListView1.Items().BeginUpdate()
 	f.ListView1.Items().Clear()
 	index := 1
-	for _, v := range global.OrderList {
+	data := global.OrderList
+	if f.PageControl1.ActivePageIndex() == 1 {
+		data = global.OrderStatusList
+	}
+	for _, v := range data {
 		if strings.Index(v.DrawNo, strings.ToUpper(f.Edit1.Text())) != -1 {
 			item := f.ListView1.Items().Add()
 			item.SetCaption(strconv.Itoa(index))
@@ -137,15 +141,20 @@ func (f *TForm1) OnButton1Click(sender vcl.IObject) {
 
 func (f *TForm1) OnButton2Click(sender vcl.IObject) {
 	// 获取数据
-	res, err := service.GetOrderList()
+	res, plmStatus, err := service.GetOrderList()
 	if err != nil {
 		fmt.Println(err)
 	}
 	global.OrderList = res
+	global.OrderStatusList = plmStatus
 	f.ListView1.Items().BeginUpdate()
 	f.ListView1.Items().Clear()
 	index := 1
-	for _, v := range global.OrderList {
+	data := global.OrderList
+	if f.PageControl1.ActivePageIndex() == 1 {
+		data = global.OrderStatusList
+	}
+	for _, v := range data {
 		item := f.ListView1.Items().Add()
 		item.SetCaption(strconv.Itoa(index))
 		item.SubItems().Add(v.DrawNo)
@@ -158,8 +167,45 @@ func (f *TForm1) OnButton2Click(sender vcl.IObject) {
 	}
 	f.ListView1.Items().EndUpdate()
 }
-func (f *TForm1) OnTabControl1Change(sender vcl.IObject) {
-
+func (f *TForm1) OnPageControl1Change(sender vcl.IObject) {
+	// 切换tab页
+	if f.PageControl1.ActivePageIndex() == 0 {
+		f.ListView1.SetParent(f.TabSheet1)
+		// 切换显示数据
+		f.ListView1.Items().BeginUpdate()
+		f.ListView1.Items().Clear()
+		index := 1
+		for _, v := range global.OrderList {
+			item := f.ListView1.Items().Add()
+			item.SetCaption(strconv.Itoa(index))
+			item.SubItems().Add(v.DrawNo)
+			item.SubItems().Add(v.PartNo)
+			item.SubItems().Add(v.CustomerPartNo)
+			item.SubItems().Add(v.Customer)
+			item.SubItems().Add(v.OrderDate.Format("2006-01-02"))
+			item.SubItems().Add(v.Status)
+			index++
+		}
+		f.ListView1.Items().EndUpdate()
+	} else if f.PageControl1.ActivePageIndex() == 1 {
+		f.ListView1.SetParent(f.TabSheet2)
+		// 切换显示数据
+		f.ListView1.Items().BeginUpdate()
+		f.ListView1.Items().Clear()
+		index := 1
+		for _, v := range global.OrderStatusList {
+			item := f.ListView1.Items().Add()
+			item.SetCaption(strconv.Itoa(index))
+			item.SubItems().Add(v.DrawNo)
+			item.SubItems().Add(v.PartNo)
+			item.SubItems().Add(v.CustomerPartNo)
+			item.SubItems().Add(v.Customer)
+			item.SubItems().Add(v.OrderDate.Format("2006-01-02"))
+			item.SubItems().Add(v.Status)
+			index++
+		}
+		f.ListView1.Items().EndUpdate()
+	}
 }
 
 func (f *TForm1) OnListView1Data(sender vcl.IObject, item *vcl.TListItem) {

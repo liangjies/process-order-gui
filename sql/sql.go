@@ -31,8 +31,19 @@ func GeDrawINProcessHot(drawNo []string) (res []string, err error) {
 }
 
 // 查询PLM系统
-func GeDrawINPLM(drawNo []string) (res []string, err error) {
+func GeDrawINPLM(drawNo []string) (res []string, noPubilc []string, err error) {
+	type DrawINPLMStatus struct {
+		DrawNo string `gorm:"column:drawNo"`
+		Status string `gorm:"column:state"`
+	}
+	var drawINPLMStatus []DrawINPLMStatus
 	db := global.SYS_DB.Model(&model.OrderList{})
-	err = db.Raw("select distinct identityno as 图号 FROM [PLM].[PLM].[dbo].[p_part] where identityno in ?", drawNo).Scan(&res).Error
-	return res, err
+	err = db.Raw("select distinct identityno as drawNo,CASE c.state WHEN '000000000002000000003289' THEN '1' ELSE '0' END state FROM [PLM].[PLM].[dbo].[p_part] a inner join [PLM].[PLM].[dbo].[t_partprocess] b on a.obj_id = b.rolea_id and a.class_id = b.rolea_class_id and b.iswork<>0 inner join [PLM].[PLM].[dbo].[t_process] c on b.roleb_id = c.obj_id where identityno in ?", drawNo).Scan(&drawINPLMStatus).Error
+	for _, v := range drawINPLMStatus {
+		res = append(res, v.DrawNo)
+		if v.Status == "0" {
+			noPubilc = append(noPubilc, v.DrawNo)
+		}
+	}
+	return res, noPubilc, err
 }

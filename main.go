@@ -58,11 +58,12 @@ func main() {
 		}
 	}
 	// 获取数据
-	res, err := service.GetOrderList()
+	res, plmStatus, err := service.GetOrderList()
 	if err != nil {
 		fmt.Println(err)
 	}
 	global.OrderList = res
+	global.OrderStatusList = plmStatus
 	// GUI
 	vcl.Application.SetScaled(true)
 	vcl.Application.SetTitle("project1")
